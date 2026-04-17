@@ -1,3 +1,4 @@
+import Link from "next/link";
 import Image from "next/image";
 
 export default function Header() {
@@ -22,6 +23,11 @@ export default function Header() {
           />
         </div>
         Next.JS + NestJS Project
+      </div>
+      <div className="absolute right-0 top-0 m-4">
+        <Link href="/login">
+          <button className="bg-blue-500 hover:bg-blue-700 cursor-pointer text-white font-bold py-2 px-4 rounded">Login</button>
+        </Link>
       </div>
     </header>
   );

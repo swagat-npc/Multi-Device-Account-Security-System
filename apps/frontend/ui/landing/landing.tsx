@@ -1,6 +1,6 @@
 "use client"
 
-import styles from "@/app/ui/pages/landing.module.css";
+import styles from "@/ui/pages/landing.module.css";
 import { useState } from "react";
 
 export default function Landing() {
