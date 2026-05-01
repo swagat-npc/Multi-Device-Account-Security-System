@@ -37,11 +37,13 @@ export class NotesController {
     return this.notesService.delete(id, req.user.userId);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post(':id/access')
-  share(@Param('id') id: string, @Body() shareData: NoteAccessDto) {
-    return this.notesService.share(id, shareData);
+  share(@Param('id') id: string, @Body() shareData: NoteAccessDto, @Req() req: any) {
+    return this.notesService.share(id, req.user.userId, shareData);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get(':id/access')
   getAccess(@Param('id') id: string) {
     return this.notesService.getAccess(id);
