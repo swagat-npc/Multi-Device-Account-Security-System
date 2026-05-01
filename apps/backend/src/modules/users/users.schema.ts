@@ -8,6 +8,4 @@ export const UserSchema = new mongoose.Schema({
   passwordHash: { type: String, required: true, select: false },
   avatar: { type: String },
   isActive: { type: Boolean, default: true, select: false },
-  createdAt: { type: Date, default: Date.now, select: false },
-  updatedAt: { type: Date, default: Date.now, select: false }
-},{ versionKey: false });
+},{ versionKey: false, timestamps: true });

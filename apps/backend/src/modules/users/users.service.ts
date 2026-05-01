@@ -1,6 +1,7 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import { NotesService } from '../notes/notes.service';
 
 /*
 Notes
@@ -13,6 +14,7 @@ Notes
 export class UserService {
   constructor(
     @InjectModel('User') private readonly userModel: Model<any>,
+    private readonly notesService: NotesService,
   ) {}
 
   async create(userData: any): Promise<any> {
@@ -47,6 +49,10 @@ export class UserService {
       .findOne({ email })
       .select('+passwordHash')
       .exec();
+  }
+
+  async findNotesByUserId(userId: string) {
+    return this.notesService.findByUserId(userId);
   }
 
   async delete(id: string): Promise<any> {

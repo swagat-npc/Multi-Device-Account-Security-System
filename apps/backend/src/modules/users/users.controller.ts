@@ -1,9 +1,12 @@
-import { Body, Controller, Delete, Get, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
 import { UserService } from './users.service';
+import { NotesService } from '../notes/notes.service';
 
 @Controller("users")
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService
+  ) {}
 
   @Post()
   register(@Body() user: any) {
@@ -13,6 +16,11 @@ export class UserController {
   @Get("all")
   findAll() {
     return this.userService.findAll();
+  }
+
+  @Get(':userId/notes')
+  findNotesByUserId(@Param('userId') userId: string) {
+    return this.userService.findNotesByUserId(userId);
   }
 
   @Delete("delete")
