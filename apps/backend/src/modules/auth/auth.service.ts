@@ -47,4 +47,12 @@ export class AuthService {
             tokenType: 'Bearer'
         };
     }
+
+    validateToken(token: string): any {
+        try {
+            return this.jwtService.verify(token);
+        } catch (error: any) {
+            throw new UnauthorizedException('Invalid token: ' + error.message);
+        }
+    }
 }
