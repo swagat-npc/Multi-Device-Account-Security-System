@@ -5,15 +5,20 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { UserModule } from './modules/users/users.module';
 import { SessionModule } from './modules/sessions/sessions.module';
 import { NotesModule } from './modules/notes/notes.module';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from './modules/auth/auth.module';
 
-ConfigModule.forRoot({
-  isGlobal: true,
-});
 @Module({
   imports: [
-    MongooseModule.forRoot(process.env.MONGO_URI! + process.env.DATABASE_NAME!),
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    MongooseModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        uri: config.getOrThrow<string>('MONGO_URI') + config.getOrThrow<string>('DATABASE_NAME')
+      }),
+    }),
     AuthModule,
     UserModule,
     SessionModule,

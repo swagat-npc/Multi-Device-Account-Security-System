@@ -8,7 +8,6 @@ import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
-    AuthModule,
     MongooseModule.forFeature([
       { name: 'Note', schema: NoteSchema },
       { name: 'NoteAccess', schema: NoteAccessSchema },
