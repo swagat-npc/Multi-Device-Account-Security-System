@@ -18,11 +18,6 @@ export class UserController {
     return this.userService.findAll();
   }
 
-  @Get(':userId/notes')
-  findNotesByUserId(@Param('userId') userId: string) {
-    return this.userService.findNotesByUserId(userId);
-  }
-
   @Delete("delete")
   delete(@Body("id") id: string) {
     return this.userService.delete(id);
