@@ -2,6 +2,13 @@ import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
+/*
+Notes
+- create user
+- find user
+- query DB
+*/
+
 @Injectable()
 export class UserService {
   constructor(
@@ -15,6 +22,10 @@ export class UserService {
 
       const obj = savedUser.toObject();
       delete obj.passwordHash;
+      delete obj.createdAt;
+      delete obj.updatedAt;
+      delete obj.isActive;
+      delete obj._id;
 
       return obj;
     } catch (error: any) {
@@ -26,6 +37,21 @@ export class UserService {
   }
 
   async findAll(): Promise<any[]> {
-    return this.userModel.find().exec();
+    return this.userModel
+      .find()
+      .exec();
+  }
+
+  async findByEmail(email: string): Promise<any> {
+    return this.userModel
+      .findOne({ email })
+      .select('+passwordHash')
+      .exec();
+  }
+
+  async delete(id: string): Promise<any> {
+    return this.userModel
+      .findByIdAndDelete(id)
+      .exec();
   }
 }
