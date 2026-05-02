@@ -1,7 +1,35 @@
+"use client";
+
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 
 export default function LoginPage() {
+  const router = useRouter();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
+
+    const res = await fetch("http://localhost:3001/auth/login", {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (res.ok) {
+      router.push("/notes");
+    } else {
+      alert("Login failed");
+    }
+  }
+
   return (
     <div className="min-h-screen w-full items-center justify-center bg-gray-100 text-gray-900">
       <section className="border-red-500 bg-gray-200 min-h-screen flex items-center justify-center">
@@ -11,13 +39,15 @@ export default function LoginPage() {
             <p className="text-sm mt-4 text-[#002D74]">
               If you have an account, please login
             </p>
-            <form className="mt-6" action="#" method="POST">
+            <form className="mt-6" onSubmit={handleLogin}>
               <div>
                 <label className="block text-gray-700">Email Address</label>
                 <input
                   type="email"
                   placeholder="Enter Email Address"
                   className="w-full px-4 py-3 rounded-lg bg-gray-200 mt-2 border focus:border-blue-500 focus:bg-white focus:outline-none text-gray-700"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </div>
@@ -28,6 +58,8 @@ export default function LoginPage() {
                   type="password"
                   placeholder="Enter Password"
                   className="w-full px-4 py-3 rounded-lg bg-gray-200 mt-2 border focus:border-blue-500 focus:bg-white focus:outline-none text-gray-700"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
                 />
               </div>
