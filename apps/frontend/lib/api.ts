@@ -1,5 +1,7 @@
+const BASE_URL = "http://localhost:3001";
+
 export async function apiFetch(url: string, options: RequestInit = {}) {
-  const res = await fetch(url, {
+  const res = await fetch(`${BASE_URL}${url}`, {
     ...options,
     credentials: "include",
   });
@@ -15,7 +17,7 @@ export async function apiFetch(url: string, options: RequestInit = {}) {
   }
 
   // Refresh Token if access token expired
-  const refreshRes = await fetch("http://localhost:3001/auth/refresh", {
+  const refreshRes = await fetch(`${BASE_URL}/auth/refresh`, {
     method: "POST",
     credentials: "include",
   });
@@ -27,7 +29,7 @@ export async function apiFetch(url: string, options: RequestInit = {}) {
   }
 
   // Retry original request after refreshing token
-  return await fetch(url, {
+  return await fetch(`${BASE_URL}${url}`, {
     ...options,
     credentials: "include",
   });

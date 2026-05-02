@@ -2,24 +2,9 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { logout } from "@/lib/auth";
 
 export default function Header() {
-   const router = useRouter();
-
-  function handleLogout() {
-    fetch("http://localhost:3001/auth/logout", {
-      method: "POST",
-      credentials: "include",
-    }).then((res) => {
-      if (res.ok) {
-        router.push("/");
-      } else {
-        alert(res.body || "Logout failed");
-      }
-    });
-  }
-
   return (
     <header className="w-full bg-gray-800 text-white flex items-center justify-center p-6">
       <div className="flex flex-col items-center text-center sm:items-start sm:text-left">
@@ -46,7 +31,7 @@ export default function Header() {
         <Link href="/login">
           <button className="bg-blue-500 hover:bg-blue-700 cursor-pointer text-white font-bold py-2 px-4 rounded">Login</button>
         </Link>
-        <button className="bg-red-500 hover:bg-red-700 cursor-pointer text-white font-bold py-2 px-4 rounded" onClick={handleLogout}>
+        <button className="bg-red-500 hover:bg-red-700 cursor-pointer text-white font-bold py-2 px-4 rounded" onClick={logout}>
           Logout
         </button>
       </div>
