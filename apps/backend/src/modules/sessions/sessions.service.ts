@@ -5,11 +5,11 @@ import { Model } from 'mongoose';
 @Injectable()
 export class SessionService {
   constructor(
-    @InjectModel('Session') private readonly sessionModel: Model<any>,
+    // @InjectModel('Session') private readonly sessionModel: Model<any>,
   ) {}
 
-  async create(sessionData: any) {
-    const session = new this.sessionModel(sessionData);
-    return session.save();
-  }
+  // async create(sessionData: any) {
+  //   const session = new this.sessionModel(sessionData);
+  //   return session.save();
+  // }
 }

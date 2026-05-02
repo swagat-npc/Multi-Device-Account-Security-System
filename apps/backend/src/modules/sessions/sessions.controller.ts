@@ -5,8 +5,8 @@ import { SessionService } from './sessions.service';
 export class SessionController {
   constructor(private readonly sessionService: SessionService) {}
 
-  @Post()
-  create(@Body() session: any) {
-    return this.sessionService.create(session);
-  }
+  // @Post()
+  // create(@Body() session: any) {
+  //   return this.sessionService.create(session);
+  // }
 }

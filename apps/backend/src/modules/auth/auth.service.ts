@@ -8,6 +8,7 @@ import { ConfigService } from "@nestjs/config";
 import { InjectModel } from "@nestjs/mongoose";
 import Parser from "ua-parser-js";
 import { Response } from "express";
+import { Model } from "mongoose";
 
 /*
 Notes
@@ -23,7 +24,7 @@ const ACCESS_TOKEN_TTL = 15 * 60 * 1000; // 15 minutes
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectModel("Session") private readonly sessionModel: any,
+    @InjectModel('Session') private readonly sessionModel: Model<any>,
     private readonly jwtService: JwtService,
     private readonly userService: UserService,
     private readonly config: ConfigService,
@@ -83,6 +84,7 @@ export class AuthService {
       userId: user._id,
       refreshTokenHash: hashedRefreshToken,
       lastActivityAt: now,
+      expiresAt: new Date(now.getTime() + REFRESH_TOKEN_TTL),
       idleExpiresAt: new Date(now.getTime() + IDLE_TIMEOUT_MS),
       revoked: false,
       userAgent: req.headers["user-agent"] || "Unknown",
@@ -120,16 +122,16 @@ export class AuthService {
       throw new UnauthorizedException("Session not found");
     }
 
-	// Check if session is idle expired
-	const now = new Date();
-	if (session.idleExpiresAt < now) {
-	  session.revoked = true;
-	  await session.save();
+    // Check if session is idle expired
+    const now = new Date();
+    if (session.idleExpiresAt < now) {
+      session.revoked = true;
+      await session.save();
 
-	  throw new UnauthorizedException("Session expired due to inactivity");
-	}
+      throw new UnauthorizedException("Session expired due to inactivity");
+    }
 
-	// Check if refresh token is valid
+    // Check if refresh token is valid
     const isValid = await bcrypt.compare(
       refreshToken,
       session.refreshTokenHash,
@@ -144,18 +146,18 @@ export class AuthService {
       );
     }
 
-	// Rotate session
-	session.lastActivityAt = now;
-	session.idleExpiresAt = new Date(now.getTime() + IDLE_TIMEOUT_MS);
-	
+    // Rotate session
+    session.lastActivityAt = now;
+    session.idleExpiresAt = new Date(now.getTime() + IDLE_TIMEOUT_MS);
+
     const newRefreshToken = this.jwtService.sign(
-		{ sub: payload.sub, email: payload.email },
-		{
-			secret: this.config.getOrThrow<string>("JWT_REFRESH_SECRET"),
-			expiresIn: "7d",
-		},
+      { sub: payload.sub, email: payload.email },
+      {
+        secret: this.config.getOrThrow<string>("JWT_REFRESH_SECRET"),
+        expiresIn: "7d",
+      },
     );
-	session.refreshTokenHash = await bcrypt.hash(newRefreshToken, 10);
+    session.refreshTokenHash = await bcrypt.hash(newRefreshToken, 10);
 
     await session.save();
 
