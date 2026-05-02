@@ -15,7 +15,7 @@ export default function Header() {
       if (res.ok) {
         router.push("/");
       } else {
-        alert("Logout failed");
+        alert(res.body || "Logout failed");
       }
     });
   }

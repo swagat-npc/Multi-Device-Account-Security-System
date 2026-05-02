@@ -1,8 +1,12 @@
 "use client";
 
+import { apiFetch } from "@/lib/api";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function NotesPage() {
+    const router = useRouter();
+
   const [notes, setNotes] = useState<any[]>([]);
 
   useEffect(() => {
@@ -10,16 +14,17 @@ export default function NotesPage() {
   }, []);
 
   async function fetchNotes() {
-    const res = await fetch("http://localhost:3001/notes", {
+    const res = await apiFetch("http://localhost:3001/notes", {
       method: "GET",
       credentials: "include",
     });
     
+    const data = await res.json().catch(() => null);
+
     if (res.ok) {
-        const data = await res.json();
         setNotes(data);
     } else {
-        alert("Failed to fetch notes");
+        router.push("/login");
     }
   }
 

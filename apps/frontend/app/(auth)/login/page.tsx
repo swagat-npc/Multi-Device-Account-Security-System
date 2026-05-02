@@ -26,7 +26,7 @@ export default function LoginPage() {
     if (res.ok) {
       router.push("/notes");
     } else {
-      alert("Login failed");
+      router.push("/login?error=Invalid%20credentials");
     }
   }
 

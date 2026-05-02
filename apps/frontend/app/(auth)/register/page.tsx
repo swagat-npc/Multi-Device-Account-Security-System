@@ -50,8 +50,7 @@ export default function RegisterPage() {
       return;
     }
 
-    const data = await res.json();
-    console.log(data);
+    window.location.href = "/login";
   };
 
   return (
