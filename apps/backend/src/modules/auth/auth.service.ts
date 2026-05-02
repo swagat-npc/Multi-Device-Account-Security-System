@@ -40,6 +40,10 @@ export class AuthService {
     return bcrypt.hashSync(password, 10);
   }
 
+  async getMe(userId: string) {
+    return this.userService.findById(userId);
+  }
+
   async login(
     loginData: LoginDto,
     res: Response,
