@@ -1,7 +1,8 @@
-import { Body, Controller, Get, Post, Req } from '@nestjs/common';
+import { Body, Controller, Post, Req, Res } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { Response } from 'express';
 
 @Controller("auth")
 export class AuthController {
@@ -13,18 +14,23 @@ export class AuthController {
   }
 
   @Post("login")
-  async login(@Body() login: LoginDto, @Req() req: any) {
-    return this.authService.login(login, req);
+  async login(@Body() login: LoginDto, @Res({ passthrough: true }) res: any, @Req() req: any) {
+    return this.authService.login(login, res, req);
   }
 
   @Post("refresh")
-  refresh(@Body() body: any) {
-    return this.authService.refresh(body.refreshToken, body.sessionId);
+  refresh(@Req() req: any, @Res({ passthrough: true }) res: Response) {
+    const refreshToken = req.cookies.refreshToken;
+
+    return this.authService.refresh(refreshToken, res);
   }
 
   @Post("logout")
-  logout(@Body() body: any) {
-    return this.authService.logout(body.sessionId);
+  logout(@Res({passthrough: true}) res: Response) {
+    res.clearCookie("accessToken");
+    res.clearCookie("refreshToken");
+
+    return { message: "Logged out successfully" };;
   }
 
   @Post("logout-all")

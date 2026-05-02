@@ -49,6 +49,13 @@ export class UserService {
       .exec();
   }
 
+  async findById(id: string): Promise<any> {
+    return this.userModel
+      .findById(id)
+      .select('+passwordHash')
+      .exec();
+  }
+
   async delete(id: string): Promise<any> {
     return this.userModel
       .findByIdAndDelete(id)

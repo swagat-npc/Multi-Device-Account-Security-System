@@ -1,6 +1,7 @@
-import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Post, UseGuards } from '@nestjs/common';
 import { UserService } from './users.service';
-import { NotesService } from '../notes/notes.service';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { CurrentUser } from '../../common/decorators/currentuser.decorator';
 
 @Controller("users")
 export class UserController {
@@ -18,8 +19,15 @@ export class UserController {
     return this.userService.findAll();
   }
 
-  @Delete("delete")
-  delete(@Body("id") id: string) {
-    return this.userService.delete(id);
+  @UseGuards(JwtAuthGuard)
+  @Get("me")
+  me(@CurrentUser() user: any) {
+    return this.userService.findById(user.sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete("me")
+  delete(@CurrentUser() user: any) {
+    return this.userService.delete(user.sub);
   }
 }

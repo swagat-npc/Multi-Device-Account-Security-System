@@ -7,7 +7,7 @@ import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
 import { InjectModel } from "@nestjs/mongoose";
 import Parser from "ua-parser-js";
-
+import { Response } from "express";
 
 /*
 Notes
@@ -15,6 +15,10 @@ Notes
 - compare passwords
 - tokens, sessions
 */
+
+const IDLE_TIMEOUT_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const REFRESH_TOKEN_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
+const ACCESS_TOKEN_TTL = 15 * 60 * 1000; // 15 minutes
 
 @Injectable()
 export class AuthService {
@@ -35,7 +39,11 @@ export class AuthService {
     return bcrypt.hashSync(password, 10);
   }
 
-  async login(loginData: LoginDto, req: any): Promise<LoginResponseDto> {
+  async login(
+    loginData: LoginDto,
+    res: Response,
+    req: any,
+  ): Promise<LoginResponseDto> {
     const user = await this.userService.findByEmail(loginData.email);
 
     if (!user) {
@@ -56,91 +64,123 @@ export class AuthService {
       expiresIn: "15m",
     });
     const refreshToken = this.jwtService.sign(payload, {
-      secret: this.config.get<string>("JWT_REFRESH_SECRET"),
+      secret: this.config.getOrThrow<string>("JWT_REFRESH_SECRET"),
       expiresIn: "7d",
     });
     const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
 
-	const parser = new Parser.UAParser(req.headers["user-agent"] || "");
+    const parser = new Parser.UAParser(req.headers["user-agent"] || "");
 
-	const deviceName = parser.getDevice() || { type: "Unknown", vendor: "Unknown", model: "" };
-	const os = parser.getOS() || { name: "Unknown", version: "" };
-	const browser = parser.getBrowser() || { name: "Unknown", version: "" };
-
-    const session = await this.sessionModel.create({
+    const deviceName = parser.getDevice() || {
+      type: "Unknown",
+      vendor: "Unknown",
+      model: "",
+    };
+    const os = parser.getOS() || { name: "Unknown", version: "" };
+    const browser = parser.getBrowser() || { name: "Unknown", version: "" };
+    const now = new Date();
+    await this.sessionModel.create({
       userId: user._id,
       refreshTokenHash: hashedRefreshToken,
-      tokenVersion: 0,
-      createdAt: new Date(),
-      lastUsedAt: new Date(),
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      lastActivityAt: now,
+      idleExpiresAt: new Date(now.getTime() + IDLE_TIMEOUT_MS),
       revoked: false,
       userAgent: req.headers["user-agent"] || "Unknown",
       deviceName: `${deviceName.type} ${os.name} ${browser.name}`.trim(),
       ipAddress: req.ip || "Unknown",
     });
 
-    return {
-      accessToken,
-      refreshToken,
-      sessionId: session._id.toString(),
-    };
-  }
-
-  async refresh(refreshToken: string, sessionId: string) {
-    const session = await this.sessionModel.findById(sessionId);
-
-    if (!session || session.revoked) {
-      throw new UnauthorizedException("Invalid session");
-    }
-
-    const payload = this.jwtService.verify(refreshToken, {
-      secret: this.config.get<string>("JWT_REFRESH_SECRET"),
+    res.cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: false, // Set to true in production with HTTPS
+      sameSite: "lax",
+      maxAge: ACCESS_TOKEN_TTL,
     });
 
-    if (payload.sub !== session.userId.toString()) {
-      throw new UnauthorizedException("Token user mismatch");
-    } else if (payload.version !== session.tokenVersion) {
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: false, // Set to true in production with HTTPS
+      sameSite: "lax",
+      maxAge: REFRESH_TOKEN_TTL,
+    });
+
+    return { message: "Login successful" };
+  }
+
+  async refresh(refreshToken: string, res: Response) {
+    const payload = this.jwtService.verify(refreshToken, {
+      secret: this.config.getOrThrow<string>("JWT_REFRESH_SECRET"),
+    });
+
+    const session = await this.sessionModel
+      .findOne({ userId: payload.sub, revoked: false })
+      .exec();
+
+    if (!session) {
+      throw new UnauthorizedException("Session not found");
+    }
+
+	// Check if session is idle expired
+	const now = new Date();
+	if (session.idleExpiresAt < now) {
+	  session.revoked = true;
+	  await session.save();
+
+	  throw new UnauthorizedException("Session expired due to inactivity");
+	}
+
+	// Check if refresh token is valid
+    const isValid = await bcrypt.compare(
+      refreshToken,
+      session.refreshTokenHash,
+    );
+
+    if (!isValid) {
+      session.revoked = true;
       session.reusedDetectedAt = new Date();
       await session.save();
-
-      throw new UnauthorizedException("Token version mismatch");
+      throw new UnauthorizedException(
+        "Refresh token reuse detected. Session revoked.",
+      );
     }
 
-    session.tokenVersion += 1;
-    session.lastUsedAt = new Date();
-	const now = new Date();
-	const maxIdleTime = 7 * 24 * 60 * 60 * 1000;
-
-	if (now.getTime() - session.lastUsedAt.getTime() > maxIdleTime) {
-      session.revoked = true;
-	  throw new UnauthorizedException("Session expired due to inactivity");
-    }
+	// Rotate session
+	session.lastActivityAt = now;
+	session.idleExpiresAt = new Date(now.getTime() + IDLE_TIMEOUT_MS);
+	
+    const newRefreshToken = this.jwtService.sign(
+		{ sub: payload.sub, email: payload.email },
+		{
+			secret: this.config.getOrThrow<string>("JWT_REFRESH_SECRET"),
+			expiresIn: "7d",
+		},
+    );
+	session.refreshTokenHash = await bcrypt.hash(newRefreshToken, 10);
 
     await session.save();
 
     const newAccessToken = this.jwtService.sign(
       { sub: payload.sub, email: payload.email },
-      { expiresIn: "15m" },
-    );
-
-    const newRefreshToken = this.jwtService.sign(
-      { sub: payload.sub, email: payload.email, version: session.tokenVersion },
       {
-        secret: this.config.get<string>("JWT_REFRESH_SECRET"),
-        expiresIn: "7d",
+        expiresIn: "15m",
       },
     );
 
-    return { accessToken: newAccessToken, refreshToken: newRefreshToken };
-  }
+    res.cookie("accessToken", newAccessToken, {
+      httpOnly: true,
+      secure: false, // Set to true in production with HTTPS
+      sameSite: "lax",
+      maxAge: ACCESS_TOKEN_TTL,
+    });
 
-  validateToken(token: string): any {
-    try {
-      return this.jwtService.verify(token);
-    } catch (error: any) {
-      throw new UnauthorizedException("Invalid token: " + error.message);
-    }
+    res.cookie("refreshToken", newRefreshToken, {
+      httpOnly: true,
+      secure: false, // Set to true in production with HTTPS
+      sameSite: "lax",
+      maxAge: REFRESH_TOKEN_TTL,
+    });
+
+    return { message: "Token refreshed" };
   }
 
   async logout(sessionId: string) {
@@ -151,9 +191,9 @@ export class AuthService {
   }
 
   async revokeAllSessionsForUser(userId: string) {
-	await this.sessionModel.updateMany(
-	  { userId, revoked: false },
-	  { revoked: true }
-	);
+    await this.sessionModel.updateMany(
+      { userId, revoked: false },
+      { revoked: true },
+    );
   }
 }

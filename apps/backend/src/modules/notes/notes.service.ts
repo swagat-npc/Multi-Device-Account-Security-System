@@ -13,17 +13,7 @@ export class NotesService {
   async create(Note: CreateNoteDto, userId: String) {
     try {
       const note = new this.noteModel({ ...Note, userId });
-      const savedNote = await note.save();
-  
-      // const obj = savedNote.toObject();
-      // delete obj.createdAt;
-      // delete obj.updatedAt;
-      // delete obj.isHidden;
-      // delete obj._id;
-      // delete obj.userId;
-  
-      // return obj;
-      return savedNote;
+      return note.save().exec();
     } catch (error: any) {
       throw new Error('Failed to create note. ' + error.message);
     }
@@ -33,13 +23,7 @@ export class NotesService {
     return this.noteModel.find({ userId }).exec();
   }
 
-  async findOne(noteId: string, userId: string) {
-    const allowed = await this.canAccessNotes(noteId, userId);
-
-    if (!allowed) {
-      throw new ForbiddenException(`Access denied to note with ID ${noteId}`);
-    }
-    
+  async findOne(noteId: string) {
     return this.noteModel.findById(noteId).exec();
   }
 
@@ -54,17 +38,7 @@ export class NotesService {
       throw new ForbiddenException(`Access denied to note with ID ${noteId}`);
     }
     
-    const updatedNote = await this.noteModel.findByIdAndUpdate(noteId, { content: note.content, isHidden: note.isHidden }, { new: true }).exec();
-    
-    // const obj = updatedNote.toObject();
-    // delete obj.createdAt;
-    // delete obj.updatedAt;
-    // delete obj.isHidden;
-    // delete obj._id;
-    // delete obj.userId;
-    // return obj;
-
-    return updatedNote;
+    return this.noteModel.findByIdAndUpdate(noteId, { content: note.content, isHidden: note.isHidden }, { new: true }).exec();
   }
 
   async canAccessNotes(noteId: string, userId: string): Promise<boolean> {

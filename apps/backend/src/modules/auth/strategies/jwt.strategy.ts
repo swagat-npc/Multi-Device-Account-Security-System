@@ -9,7 +9,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         config: ConfigService
     ) {
         super({
-            jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+            jwtFromRequest: ExtractJwt.fromExtractors([
+                (req) => req.cookies?.accessToken || null,
+                ExtractJwt.fromAuthHeaderAsBearerToken()
+            ]),
             secretOrKey: config.getOrThrow<string>('JWT_ACCESS_SECRET'),
         });
     }
@@ -17,7 +20,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     async validate(payload: any)
     {
         return {
-            userId: payload.sub,
+            sub: payload.sub,
             email: payload.email
         }
     }

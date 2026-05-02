@@ -11,11 +11,6 @@ import {
 export class CreateNoteDto {
   @IsString()
   @IsNotEmpty()
-  @Transform(({ value }) => value.trim())
-  readonly userId!: string;
-
-  @IsString()
-  @IsNotEmpty()
   @MinLength(1)
   @MaxLength(300)
   @Transform(({ value }) => value.trim())
