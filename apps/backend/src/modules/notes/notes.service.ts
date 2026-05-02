@@ -13,7 +13,7 @@ export class NotesService {
   async create(Note: CreateNoteDto, userId: String) {
     try {
       const note = new this.noteModel({ ...Note, userId });
-      return note.save().exec();
+      return note.save();
     } catch (error: any) {
       throw new Error('Failed to create note. ' + error.message);
     }
