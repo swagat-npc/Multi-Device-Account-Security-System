@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Req, Res } from '@nestjs/common';
+import { Body, Controller, HttpCode, Post, Req, Res } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -25,6 +25,7 @@ export class AuthController {
     return this.authService.refresh(refreshToken, res);
   }
 
+  @HttpCode(200)
   @Post("logout")
   logout(@Res({passthrough: true}) res: Response) {
     res.clearCookie("accessToken");

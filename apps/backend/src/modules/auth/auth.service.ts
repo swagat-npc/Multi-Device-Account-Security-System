@@ -19,7 +19,7 @@ Notes
 
 const IDLE_TIMEOUT_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 const REFRESH_TOKEN_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
-const ACCESS_TOKEN_TTL = 15 * 60 * 1000; // 15 minutes
+const ACCESS_TOKEN_TTL = 1 * 60 * 1000; // TODO: change to 15 minutes
 
 @Injectable()
 export class AuthService {
@@ -183,13 +183,6 @@ export class AuthService {
     });
 
     return { message: "Token refreshed" };
-  }
-
-  async logout(sessionId: string) {
-    const session = await this.sessionModel.findByIdAndUpdate(sessionId, {
-      revoked: true,
-    });
-    return session;
   }
 
   async revokeAllSessionsForUser(userId: string) {
