@@ -22,5 +22,6 @@ export class LoginDto {
 
 export class LoginResponseDto {
   accessToken!: string;
-  tokenType!: string;
+  refreshToken!: string;
+  sessionId!: string;
 }

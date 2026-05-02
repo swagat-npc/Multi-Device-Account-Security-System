@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -13,17 +13,22 @@ export class AuthController {
   }
 
   @Post("login")
-  async login(@Body() login: LoginDto) {
-    return this.authService.login(login);
+  async login(@Body() login: LoginDto, @Req() req: any) {
+    return this.authService.login(login, req);
   }
 
-//   @Post()
-//   refresh(): { message: string } {
-//     return this.authService.getHello();
-//   }
+  @Post("refresh")
+  refresh(@Body() body: any) {
+    return this.authService.refresh(body.refreshToken, body.sessionId);
+  }
 
-//   @Post()
-//   logout(): { message: string } {
-//     return this.authService.getHello();
-//   }
+  @Post("logout")
+  logout(@Body() body: any) {
+    return this.authService.logout(body.sessionId);
+  }
+
+  @Post("logout-all")
+  logoutAll(@Req() req: any) {
+    return this.authService.revokeAllSessionsForUser(req.user.userId);
+  }
 }
